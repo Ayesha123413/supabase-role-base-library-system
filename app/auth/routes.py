@@ -1,11 +1,14 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from pydantic import BaseModel, EmailStr
 from app.config import supabase
+from uuid import UUID
+from typing import Optional  
 
 auth_router = APIRouter()
 
 
 class RegisterRequest(BaseModel):
+    id: Optional[UUID] = None
     email: EmailStr
     password: str
     full_name: str
@@ -17,25 +20,37 @@ class LoginRequest(BaseModel):
 
 @auth_router.post("/register")
 def register_user(payload: RegisterRequest):
-    result = supabase.auth.sign_up(
-       { "email":payload.email,
-        "password":payload.password,
-        }
-    )
-    if result.error:
+    try:
+
+         result = supabase.auth.sign_up(
+             { "email":payload.email,
+              "password":payload.password,
+              }
+              )
+    except Exception as e:
+        if "user already exists" in str(e):
+            raise HTTPException(
+                 status_code=status.HTTP_400_BAD_REQUEST,
+                 detail="User already exists"
+                  )
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=result.error.message
-        )
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e) 
+            )
     user = result.user
-    supabase.table("Profiles").insert({
-        "id": user["id"],
-        "email":payload.email,
-        "password": payload.password,
-        "full_name":payload.full_name,
-        "role":ayload.role
-    }).execute()
-    return {"message": "User registered successfully", "user_id": user["id"]}
+    if not user:
+        raise HTTPException(
+             status_code=status.HTTP_400_BAD_REQUEST,
+             detail="User registration failed"
+             )
+    supabase.from_("Profiles").insert({
+        "id": user.id,
+        "email": payload.email,
+        "full_name": payload.full_name,
+        "role": payload.role
+        }).execute()
+    return {"message": "User registered successfully", "user": user.id}
+
 
 @auth_router.post("/login")
 def login_user(payload: LoginRequest):
