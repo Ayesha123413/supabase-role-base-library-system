@@ -27,6 +27,7 @@ def register_user(payload: RegisterRequest):
          result = supabase.auth.sign_up(
              { "email":payload.email,
                "password":payload.password,
+               
               }
               )
     except Exception as e:

@@ -11,13 +11,14 @@ def get_my_profile(user=Security(get_current_user)):
     """Get the current user's profile."""
     try:
         profile = supabase.table("Profiles").select("*").eq("id", user.id).single().execute()
-        # print("profile",profile.data)
+        print("profile",profile.data)
         if not profile.data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         return profile.data
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+# get all users profiles, only admin can do this
 
 @user_router.get("/",response_model=list[UserProfile])
 def list_users(user=Depends(require_role("admin"))):
@@ -27,6 +28,9 @@ def list_users(user=Depends(require_role("admin"))):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
+
+
+# update role of any user , only admin can do this
 
 @user_router.put("/{user_id}/role")
 def update_user_role(user_id: str, payload: UpdateUserRole, user=Depends(require_role("admin"))):
