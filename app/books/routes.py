@@ -27,7 +27,7 @@ def list_books(user=Security(require_role("admin"))):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@book_router.put("/{book_id}", response_model=BookUpdate)
+@book_router.patch("/{book_id}", response_model=BookUpdate)
 def update_book(book_id: str, payload: BookUpdate, user=Security(require_role("admin"))):
     """Update a book's details."""
     try:
