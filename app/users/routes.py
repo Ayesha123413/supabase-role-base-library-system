@@ -35,6 +35,7 @@ def list_users(user=Depends(require_role("admin"))):
 @user_router.put("/{user_id}/role")
 def update_user_role(user_id: str, payload: UpdateUserRole, user=Depends(require_role("admin"))):
     """Update a user's role."""
+    
     try:
         result = supabase.table("Profiles").update({"role": payload.role}).eq("id", user_id).execute()
         if result.data is None:
