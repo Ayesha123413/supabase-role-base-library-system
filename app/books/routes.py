@@ -1,7 +1,7 @@
-from  fastapi import APIRouter, HTTPException, status, Depends
+from  fastapi import APIRouter, HTTPException, status, Depends , Security
 from app.config import supabase
 from app.books.models import BookCreate, BookUpdate
-from app.auth.routes import get_current_user, require_role
+from app.utils.auth_guard import get_current_user, require_role
 
 book_router = APIRouter()
 
@@ -31,9 +31,8 @@ def list_books(user=Security(require_role("admin"))):
 def update_book(book_id: str, payload: BookUpdate, user=Security(require_role("admin"))):
     """Update a book's details."""
     try:
-         print("As dict:", payload.dict()) 
-         print("As dict (exclude_unset):", payload.dict(exclude_unset=True))
-
+        print("As dict:", payload.dict()) 
+        print("As dict (exclude_unset):", payload.dict(exclude_unset=True))
         result = supabase.table("Books").update(payload.dict(exclude_unset=True)).eq("id", book_id).execute()
         if not result.data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
