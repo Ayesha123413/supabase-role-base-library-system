@@ -24,5 +24,6 @@ def require_role(role: str):
         print("User DB role:", user_role)
         if user_role != role:
             raise HTTPException(status_code=403, detail="Access denied")
+        print("running this error ",user_role,role,user)
         return user
     return role_checker
