@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends,Security
 from app.config import supabase, supabase_admin
-from app.users.models import UserProfile, UpdateUserRole,CreateUserRequest
+from app.users.models import UserProfile, UpdateUserRole,CreateUserRequest,UpdatePasswordRequest
 from app.utils.auth_guard import require_role,get_current_user
 import bcrypt
 
@@ -89,3 +89,36 @@ def update_user_role(user_id: str, payload: UpdateUserRole, user=Depends(require
         return {"message": "User role updated successfully"}
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
+@user_router.put("/update-password")
+def update_password(payload: UpdatePasswordRequest, user=Depends(get_current_user)):
+    """
+    Allows a member to change their own password.
+    Profiles table is not updated because password is managed by Supabase Auth.
+    """
+    try:
+        # Step 1: Verify old password with Supabase Auth
+        auth_res = supabase.auth.sign_in_with_password({
+            "email": user.email,   # email comes from Profiles
+            "password": payload.old_password
+        })
+
+        if not auth_res.user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Old password is incorrect"
+            )
+
+        # Step 2: Update password using Admin API
+        supabase_admin.auth.admin.update_user_by_id(
+            user.id,   # user.id comes from Profiles, matches Supabase Auth user
+            {"password": payload.new_password}
+        )
+
+        return {"message": "Password updated successfully"}
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Password update failed: {str(e)}"
+        )

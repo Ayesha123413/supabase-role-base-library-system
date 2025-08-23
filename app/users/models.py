@@ -17,3 +17,6 @@ class CreateUserRequest(BaseModel):
     role: Literal['librarian', 'member']
     password: str   # Only used at creation, never stored in Profiles
 
+class UpdatePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
