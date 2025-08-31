@@ -71,3 +71,8 @@ def list_borrowings(user=Depends(get_current_user)):
     return records.data
 
 
+@borrow_router.get("/overdue", response_model=list[BorrowingResponse])
+def overdue_books(user=Depends(require_role("librarian"))):
+    today = date.today().isoformat()
+    records = supabase.table("Borrowings").select("*").eq("status", "borrowed").lt("due_date", today).execute()
+    return records.data
