@@ -7,7 +7,7 @@ class BorrowBookRequest(BaseModel):
     due_date: date  # When the book should be returned
 
 class BorrowingResponse(BaseModel):
-    id: str
+    id: int
     user_id: str
     book_id: str
     borrow_date: date

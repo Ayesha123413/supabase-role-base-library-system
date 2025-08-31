@@ -27,3 +27,34 @@ def borrow_book(payload: BorrowBookRequest,user=Depends(require_role("member")))
     borrowing=supabase.table("Borrowings").insert(borrowing_data).execute()
     supabase.table("Books").update({"quantity": book["quantity"] - 1}).eq("id",payload.book_id).execute()
     return borrowing.data[0]
+
+# 2. Return a book (member or librarian)
+@borrow_router.post("/{borrowing_id}/return", response_model=BorrowingResponse)
+def return_book(borrowing_id: str, user=Depends(get_current_user)):
+    # Get borrowing record
+    borrowing = supabase.table("Borrowings").select("*").eq("id", borrowing_id).single().execute()
+    print("borrowing data =", borrowing.data)
+    if not borrowing.data:
+        raise HTTPException(status_code=404, detail="Borrowing record not found")
+
+    # Ensure only borrower OR librarian/admin can return
+    if borrowing.data["user_id"] != user.id:
+        raise HTTPException(status_code=403, detail="Not allowed to return this book")
+
+    if borrowing.data["status"] == "returned":
+        raise HTTPException(status_code=400, detail="Book already returned")
+
+    # Update borrowing record
+    updated = supabase.table("Borrowings").update({
+        "status": "returned",
+        "return_date": date.today().isoformat()
+    }).eq("id", borrowing_id).execute()
+
+    # Increment book quantity
+    book = supabase.table("Books").select("*").eq("id", borrowing.data["book_id"]).single().execute()
+    print("book data =",book.data["quantity"])
+    supabase.table("Books").update({"quantity": book.data["quantity"] + 1}).eq("id", book.data["id"]).execute()
+    return updated.data[0]
+
+
+
