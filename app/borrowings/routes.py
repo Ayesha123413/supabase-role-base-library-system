@@ -57,4 +57,17 @@ def return_book(borrowing_id: str, user=Depends(get_current_user)):
     return updated.data[0]
 
 
+# 3. Get borrowings (member = own only, librarian/admin = all)
+@borrow_router.get("/", response_model=list[BorrowingResponse])
+def list_borrowings(user=Depends(get_current_user)):
+    query = supabase.table("Borrowings").select("*")
+
+    if user.role == "member":
+        print("User role is member")
+        query = query.eq("user_id", user.id)
+        print("Member user - fetching own borrowings",user.id)
+
+    records = query.execute()
+    return records.data
+
 

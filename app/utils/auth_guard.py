@@ -12,6 +12,13 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Security(bearer
     user=result.user
     if not result.user:
         raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+     # Fetch role from Profiles table
+    profile = supabase.table("Profiles").select("role").eq("email", user.email).single().execute()
+    if not profile.data:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    # Attach role to user object
+    user.role = profile.data["role"]
     return result.user
 
 
